@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  testtask:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: testtask
+    restart: always
+    depends_on:
+      - postgres
+      - serviceb
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/testdb
+      SPRING_DATASOURCE_USERNAME: testuser
+      SPRING_DATASOURCE_PASSWORD: testpass
+      JWT_SECRET: my_jwt_secret
+      INTERNAL_TOKEN: my_internal_token
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  serviceb:
+    build:
+      context: ./serviceB
+      dockerfile: Dockerfile
+    container_name: serviceb
+    restart: always
+    environment:
+      INTERNAL_TOKEN: my_internal_token
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge
+
+
